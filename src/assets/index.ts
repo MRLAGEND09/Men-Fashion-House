@@ -1,0 +1,19 @@
+
+import cartIcon from "./cartIcon.png";
+import bannerOne from "./banner/bannerOne.jpg";
+import bannerTwo from "./banner/bannerTwo.jpg";
+import bannerThree from "./banner/bannerThree.jpg";
+import bannerFour from "./banner/bannerFour.jpg";
+import bannerFive from "./banner/bannerFive.jpg";
+import paymentImage from "./payment.webp";
+
+export {
+
+  cartIcon,
+  bannerOne,
+  bannerTwo,
+  bannerThree,
+  bannerFour,
+  bannerFive,
+  paymentImage,
+};
