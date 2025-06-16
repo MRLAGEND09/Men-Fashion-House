@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdClose } from "react-icons/io";
@@ -15,7 +16,8 @@ import { signIn, useSession } from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
 
 const Cart = () => {
-  const selector = useSelector((state) => state.name.cart);
+  // Adjust selector paths to match your Redux slice names
+  const cartItems = useSelector((state) => state.name.cart);
   const userInfo = useSelector((state) => state.name.userInfo);
   const { data: session } = useSession();
   const dispatch = useDispatch();
@@ -24,11 +26,12 @@ const Cart = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [payableTotal, setPayableTotal] = useState(0);
+
   useEffect(() => {
     let priceSum = 0;
     let discountSum = 0;
 
-    selector.map((product) => {
+    cartItems.forEach((product) => {
       const subtotal = product.oldprice * product.quantity;
       const discount = (product.oldprice - product.price) * product.quantity;
 
@@ -39,29 +42,40 @@ const Cart = () => {
     setTotalPrice(priceSum);
     setTotalDiscount(discountSum);
     setPayableTotal(priceSum - discountSum);
-  }, [selector]);
+  }, [cartItems]);
 
-  // payment
+  // Stripe checkout setup
   const stripePromise = loadStripe(
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   );
-  const handleCheakOut = async () => {
-    const stripe = await stripePromise;
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        "Content-type": "application/json",
-      },
-      body: JSON.stringify({
-        item: selector,
-        email: session.user.email,
-      }),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      stripe?.redirectToCheckout({ sessionId: data.id });
-    } else {
-      throw new Error("Failed to create Stripe Payment");
+
+  const handleCheckout = async () => {
+    if (!session?.user?.email) {
+      toast.error("You must be signed in to proceed with payment");
+      return;
+    }
+    try {
+      const stripe = await stripePromise;
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+          item: cartItems,
+          email: session.user.email,
+        }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        stripe?.redirectToCheckout({ sessionId: data.id });
+      } else {
+        toast.error("Failed to create Stripe payment");
+      }
+    } catch (error) {
+      toast.error("Something went wrong during checkout");
+      console.error(error);
     }
   };
 
@@ -85,16 +99,14 @@ const Cart = () => {
             </tr>
           </thead>
           <tbody>
-            {selector.map((product) => (
+            {cartItems.map((product) => (
               <tr key={product.id} className="text-center">
                 <td className="px-4 py-2 border border-white">
                   <button
-                    onClick={() =>
-                      dispatch(
-                        singleDelete(product.id),
-                        toast.success("Product deleted successfully")
-                      )
-                    }
+                    onClick={() => {
+                      dispatch(singleDelete(product.id));
+                      toast.success("Product deleted successfully");
+                    }}
                     className="text-red-500 hover:text-red-700"
                   >
                     <IoMdClose size={20} />
@@ -116,7 +128,7 @@ const Cart = () => {
                   ${product.oldprice.toFixed(2)}
                 </td>
                 <td className="px-4 py-2 border border-white">
-                  ${(product.oldprice - product.price) * product.quantity}
+                  ${((product.oldprice - product.price) * product.quantity).toFixed(2)}
                 </td>
                 <td className="px-4 py-2 border border-white">
                   ${product.price.toFixed(2)}
@@ -124,19 +136,22 @@ const Cart = () => {
                 <td className="px-4 py-2 border border-white">
                   <div className="flex items-center justify-center">
                     <button
+                      disabled={product.quantity <= 1}
                       onClick={() => dispatch(decrementQuantity(product.id))}
-                      className="px-2 py-1 text-white bg-gray-500 hover:bg-gray-700 rounded"
+                      className={`px-2 py-1 text-white rounded ${
+                        product.quantity <= 1
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-gray-500 hover:bg-gray-700"
+                      }`}
                     >
                       <FaMinus />
                     </button>
                     <span className="mx-2">{product.quantity}</span>
                     <button
-                      onClick={() =>
-                        dispatch(
-                          incressQuantity(product.id),
-                          toast.success("Increment successful")
-                        )
-                      }
+                      onClick={() => {
+                        dispatch(incressQuantity(product.id));
+                        toast.success("Increment successful");
+                      }}
                       className="px-2 py-1 text-white bg-blue-500 hover:bg-blue-700 rounded"
                     >
                       <FaPlus />
@@ -154,12 +169,10 @@ const Cart = () => {
 
       <div className="w-full">
         <button
-          onClick={() =>
-            dispatch(
-              allRemove(),
-              toast.success("All products deleted successfully")
-            )
-          }
+          onClick={() => {
+            dispatch(allRemove());
+            toast.success("All products deleted successfully");
+          }}
           className="bg-transparent border w-full border-gray-500 text-black rounded-lg px-6 py-1.5 hover:bg-red-500 hover:text-black duration-300 my-2"
         >
           Delete All
@@ -179,9 +192,7 @@ const Cart = () => {
           </div>
 
           <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-            <p className="text-base font-medium text-gray-900">
-              Total Discount
-            </p>
+            <p className="text-base font-medium text-gray-900">Total Discount</p>
             <p className="font-medium text-gray-900 text-xl">
               ${totalDiscount.toFixed(2)}
             </p>
@@ -197,7 +208,7 @@ const Cart = () => {
           <div className="mt-6 flex justify-center">
             {userInfo ? (
               <button
-                onClick={handleCheakOut}
+                onClick={handleCheckout}
                 className="w-full max-w-xs px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 shadow-md"
               >
                 Proceed to Payment
