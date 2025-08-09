@@ -1,4 +1,5 @@
 "use client";
+
 import { FaCheckCircle } from "react-icons/fa";
 import Link from "next/link";
 import { redirect, useSearchParams } from "next/navigation";
@@ -9,13 +10,17 @@ import { allRemove } from "../../components/redux/shoppingSlice";
 const SuccesPage = () => {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
-  const disPatch = useDispatch();
-  !sessionId && redirect("/");
+  const dispatch = useDispatch();
+
+  // Redirect if sessionId is missing
+  if (!sessionId) redirect("/");
+
   useEffect(() => {
     if (sessionId) {
-      disPatch(allRemove());
+      dispatch(allRemove());
     }
-  }, []);
+  }, [dispatch, sessionId]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-green-200 via-blue-200 to-purple-200 p-6">
       <div className="bg-white shadow-2xl rounded-2xl p-10 max-w-md w-full text-center transform transition duration-500 hover:scale-105">
