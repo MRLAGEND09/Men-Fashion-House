@@ -1,47 +1,46 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-export const POST = async (request) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  try {
-    const reqBody = await request.json();
-    const { email, item } = reqBody;
-    console.log("item", item);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    const extractingItems = item.map((item) => ({
-      quantity: item.quantity,
+export async function POST(request) {
+  try {
+    const { items, email } = await request.json();
+
+    if (!items || items.length === 0) {
+      return NextResponse.json({ message: "No items in cart" }, { status: 400 });
+    }
+
+    const protocol = request.headers.get("x-forwarded-proto") ||
+      (request.headers.get("referer") ? request.headers.get("referer").split("://")[0] : null) ||
+      "http";
+    const host = request.headers.get("host");
+    const origin = `${protocol}://${host}`;
+
+    const line_items = items.map((item) => ({
       price_data: {
         currency: "usd",
-        unit_amount: Math.round(item.price * 100),
         product_data: {
           name: item.name,
-          description: item.description,
-          images: [item.img],
+          images: item.img ? [item.img] : [],
         },
+        unit_amount: Math.round(item.price * 100),
       },
+      quantity: item.quantity,
     }));
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: extractingItems,
+      line_items,
       mode: "payment",
-      success_url: `${process.env.NEXT_AUTH_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_AUTH_URL}/cancel`,
-      metadata: {
-        email,
-      },
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cart`,
+      customer_email: email,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "server connected",
-      id: session.id,
-    });
-  } catch (error) {
-    console.log("err", error);
-    return NextResponse.json(
-      { success: false, message: "Checkout failed", error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ id: session.id }, { status: 200 });
+  } catch (err) {
+    console.error("Stripe checkout error:", err);
+    return NextResponse.json({ message: err.message || "Internal server error" }, { status: 500 });
   }
-};
+}
