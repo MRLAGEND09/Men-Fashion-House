@@ -42,7 +42,12 @@ const Footer = () => {
           <h2 className="text-xl font-bold mb-4">Customer Service</h2>
           <ul className="space-y-2">
             <li><p className="hover:underline text-gray-400 cursor-pointer">Shipping & Returns</p></li>
-            <li><p className="hover:underline text-gray-400 cursor-pointer">Track Order</p></li>
+            <li>
+              <a href="/track-order" className="hover:underline text-gray-400 cursor-pointer">
+                Track Order
+              </a>
+            </li>
+
             <li><p className="hover:underline text-gray-400 cursor-pointer">FAQs</p></li>
             <li><p className="hover:underline text-gray-400 cursor-pointer">Support Center</p></li>
           </ul>
