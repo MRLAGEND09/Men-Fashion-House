@@ -1,7 +1,8 @@
-<<<<<<< HEAD
-// src/app/cart/route.js
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+
+
 import Cart from "../../components/Cart";
 
 export default function CartPage() {
@@ -12,26 +13,11 @@ export default function CartPage() {
   );
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
-
-=======
-import { NextResponse } from "next/server";
-import Stripe from "stripe";
-
-import Cart from "../../components/Cart";
-
-export default function CartPage() {
-  return <Cart />;
-}
-
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-06-20",
 });
 
->>>>>>> 1bad81faf37582675c535194b8cea75b52b2fa0a
 export async function POST(request) {
   try {
     const { email, item } = await request.json();
@@ -58,11 +44,7 @@ export async function POST(request) {
               ? p.img.startsWith("http")
                 ? p.img
                 : `${baseUrl}${p.img}`
-<<<<<<< HEAD
               : "",
-=======
-              : ""
->>>>>>> 1bad81faf37582675c535194b8cea75b52b2fa0a
           ],
         },
       },
@@ -89,8 +71,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1bad81faf37582675c535194b8cea75b52b2fa0a
