@@ -15,7 +15,11 @@ const SuccesPage = () => {
   // Redirect if sessionId is missing
   if (!sessionId) redirect("/");
 
+<<<<<<< HEAD
   useEffect(() => { 
+=======
+  useEffect(() => {
+>>>>>>> 1bad81faf37582675c535194b8cea75b52b2fa0a
     if (sessionId) {
       dispatch(allRemove());
     }
